@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LiFi Auto Morse Sender</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{
+      text-align:center;
+      font-family:Arial;
+      background:black;
+      color:white;
+      padding-top:40px;
+    }
+    input{
+      padding:15px;
+      font-size:18px;
+      width:80%;
+      border-radius:10px;
+      border:none;
+      text-align:center;
+    }
+    button{
+      padding:15px 30px;
+      margin-top:20px;
+      font-size:18px;
+      border:none;
+      border-radius:10px;
+      background:green;
+      color:white;
+    }
+  </style>
+</head>
+<body>
+
+<h2>LiFi Morse Auto Sender</h2>
+
+<input type="text" id="textInput" placeholder="Type your message">
+<br>
+<button onclick="startMorse()">SEND</button>
+
+<script>
+let streamTrack;
+
+const morseCode = {
+  A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".",
+  F: "..-.", G: "--.", H: "....", I: "..", J: ".---",
+  K: "-.-", L: ".-..", M: "--", N: "-.", O: "---",
+  P: ".--.", Q: "--.-", R: ".-.", S: "...", T: "-",
+  U: "..-", V: "...-", W: ".--", X: "-..-",
+  Y: "-.--", Z: "--..",
+  " ": " "
+};
+
+async function initTorch() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "environment" }
+  });
+  streamTrack = stream.getVideoTracks()[0];
+}
+
+async function torch(on) {
+  await streamTrack.applyConstraints({
+    advanced: [{ torch: on }]
+  });
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function startMorse() {
+
+  if (!streamTrack) await initTorch();
+
+  let text = document.getElementById("textInput").value.toUpperCase();
+
+  for (let char of text) {
+
+    let code = morseCode[char];
+    if (!code) continue;
+
+    if (char === " ") {
+      await sleep(1500);
+      continue;
+    }
+
+    for (let symbol of code) {
+
+      await torch(true);
+
+      if (symbol === ".") {
+        await sleep(300);   // DOT
+      } else {
+        await sleep(800);   // DASH
+      }
+
+      await torch(false);
+      await sleep(300);     // gap between dots/dashes
+    }
+
+    await sleep(800); // gap between letters
+  }
+}
+</script>
+
+</body>
+</html>
